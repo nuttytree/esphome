@@ -60,8 +60,10 @@ class DS3231Component : public time::RealTimeClock, public i2c::I2CDevice {
  protected:
   bool read_rtc_();
   bool write_rtc_();
-  bool read_alrm_();
-  bool write_alrm_();
+  bool read_alrm_1_();
+  bool write_alrm_1_();
+  bool read_alrm_2_();
+  bool write_alrm_2_();
   bool read_ctrl_();
   bool write_ctrl_();
   bool read_stat_();
@@ -98,42 +100,46 @@ class DS3231Component : public time::RealTimeClock, public i2c::I2CDevice {
       } reg;
       mutable uint8_t raw[sizeof(reg)];
     } rtc;
-    union DS3231Alrm {
+    union DS3231Alrm1 {
       struct {
-        uint8_t a1_second : 4;
-        uint8_t a1_second_10 : 3;
-        bool a1_m1 : 1;
+        uint8_t second : 4;
+        uint8_t second_10 : 3;
+        bool m1 : 1;
 
-        uint8_t a1_minute : 4;
-        uint8_t a1_minute_10 : 3;
-        bool a1_m2 : 1;
+        uint8_t minute : 4;
+        uint8_t minute_10 : 3;
+        bool m2 : 1;
 
-        uint8_t a1_hour : 4;
-        uint8_t a1_hour_10 : 2;
-        uint8_t unused_1 : 1;
-        bool a1_m3 : 1;
+        uint8_t hour : 4;
+        uint8_t hour_10 : 2;
+        uint8_t unused : 1;
+        bool m3 : 1;
 
-        uint8_t a1_day : 4;
-        uint8_t a1_day_10 : 2;
-        uint8_t a1_day_mode : 1;
-        bool a1_m4 : 1;
-
-        uint8_t a2_minute : 4;
-        uint8_t a2_minute_10 : 3;
-        bool a2_m2 : 1;
-
-        uint8_t a2_hour : 4;
-        uint8_t a2_hour_10 : 2;
-        uint8_t unused_2 : 1;
-        bool a2_m3 : 1;
-
-        uint8_t a2_day : 4;
-        uint8_t a2_day_10 : 2;
-        uint8_t a2_day_mode : 1;
-        bool a2_m4 : 1;
+        uint8_t day : 4;
+        uint8_t day_10 : 2;
+        uint8_t day_mode : 1;
+        bool m4 : 1;
       } reg;
       mutable uint8_t raw[sizeof(reg)];
-    } alrm;
+    } alrm_1;
+    union DS3231Alrm2 {
+      struct {
+        uint8_t minute : 4;
+        uint8_t minute_10 : 3;
+        bool m2 : 1;
+
+        uint8_t hour : 4;
+        uint8_t hour_10 : 2;
+        uint8_t unused : 1;
+        bool m3 : 1;
+
+        uint8_t day : 4;
+        uint8_t day_10 : 2;
+        uint8_t day_mode : 1;
+        bool m4 : 1;
+      } reg;
+      mutable uint8_t raw[sizeof(reg)];
+    } alrm_2;
     union DS3231Ctrl {
       struct {
         bool alrm_1_int : 1;

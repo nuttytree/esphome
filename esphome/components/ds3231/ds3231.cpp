@@ -11,7 +11,8 @@ static const char *TAG = "ds3231";
 
 // DS3232 Register Addresses
 static const uint32_t DS3231_RTC_ADDRESS = 0x00;
-static const uint32_t DS3231_ALARM_ADDRESS = 0x07;
+static const uint32_t DS3231_ALARM_1_ADDRESS = 0x07;
+static const uint32_t DS3231_ALARM_2_ADDRESS = 0x0B;
 static const uint32_t DS3231_CONTROL_ADDRESS = 0x0E;
 static const uint32_t DS3231_STATUS_ADDRESS = 0x0F;
 
@@ -29,13 +30,15 @@ void DS3231Component::setup() {
   if (!this->read_rtc_()) {
     this->mark_failed();
   }
-  if(!this->read_alrm_()) {
+  if(!this->read_alrm_1_()) {
+    this->mark_failed();
+  }
+  if(!this->read_alrm_2_()) {
     this->mark_failed();
   }
   if(!this->read_ctrl_()) {
     this->mark_failed();
   }
-
   if(!this->read_stat_()) {
     this->mark_failed();
   }
@@ -109,47 +112,47 @@ void DS3231Component::write_time() {
 }
 
 void DS3231Component::set_alarm(DS3231AlarmType alarm_type, uint8_t second, uint8_t minute, uint8_t hour, uint8_t day) {
-  bool need_ctrl_write = false;
+  this->read_ctrl_();
   // Alarm 1
   if (!(alarm_type & DS3231_ALARM_TYPE_ALARM_NUMBER)) {
-    ds3231_.alrm.reg.a1_second = second % 10;
-    ds3231_.alrm.reg.a1_second_10 = second / 10;
-    ds3231_.alrm.reg.a1_m1 = alarm_type & DS3231_ALARM_TYPE_M1;
-    ds3231_.alrm.reg.a1_minute = minute % 10;
-    ds3231_.alrm.reg.a1_minute_10 = minute / 10;
-    ds3231_.alrm.reg.a1_m2 = alarm_type & DS3231_ALARM_TYPE_M2;
-    ds3231_.alrm.reg.a1_hour = hour % 10;
-    ds3231_.alrm.reg.a1_hour_10 = hour / 10;
-    ds3231_.alrm.reg.a1_m3 = alarm_type & DS3231_ALARM_TYPE_M3;
-    ds3231_.alrm.reg.a1_day = day % 10;
-    ds3231_.alrm.reg.a1_day_10 = day / 10;
-    ds3231_.alrm.reg.a1_day_mode = alarm_type & DS3231_ALARM_TYPE_DAY_MODE;
-    ds3231_.alrm.reg.a1_m4 = alarm_type & DS3231_ALARM_TYPE_M4;
+    this->read_alrm_1_();
+    ds3231_.alrm_1.reg.second = second % 10;
+    ds3231_.alrm_1.reg.second_10 = second / 10;
+    ds3231_.alrm_1.reg.m1 = alarm_type & DS3231_ALARM_TYPE_M1;
+    ds3231_.alrm_1.reg.minute = minute % 10;
+    ds3231_.alrm_1.reg.minute_10 = minute / 10;
+    ds3231_.alrm_1.reg.m2 = alarm_type & DS3231_ALARM_TYPE_M2;
+    ds3231_.alrm_1.reg.hour = hour % 10;
+    ds3231_.alrm_1.reg.hour_10 = hour / 10;
+    ds3231_.alrm_1.reg.m3 = alarm_type & DS3231_ALARM_TYPE_M3;
+    ds3231_.alrm_1.reg.day = day % 10;
+    ds3231_.alrm_1.reg.day_10 = day / 10;
+    ds3231_.alrm_1.reg.day_mode = alarm_type & DS3231_ALARM_TYPE_DAY_MODE;
+    ds3231_.alrm_1.reg.m4 = alarm_type & DS3231_ALARM_TYPE_M4;
+    this->write_alrm_1_();
     if (ds3231_.ctrl.reg.alrm_1_int != bool(alarm_type & DS3231_ALARM_TYPE_INTERUPT)) {
       ds3231_.ctrl.reg.alrm_1_int = bool(alarm_type & DS3231_ALARM_TYPE_INTERUPT);
-      need_ctrl_write = true;
+      this->write_ctrl_();
     }
   }
   // Alarm 2
   else {
-    ds3231_.alrm.reg.a2_minute = minute % 10;
-    ds3231_.alrm.reg.a2_minute_10 = minute / 10;
-    ds3231_.alrm.reg.a2_m2 = alarm_type & DS3231_ALARM_TYPE_M2;
-    ds3231_.alrm.reg.a2_hour = hour % 10;
-    ds3231_.alrm.reg.a2_hour_10 = hour / 10;
-    ds3231_.alrm.reg.a2_m3 = alarm_type & DS3231_ALARM_TYPE_M3;
-    ds3231_.alrm.reg.a2_day = day % 10;
-    ds3231_.alrm.reg.a2_day_10 = day / 10;
-    ds3231_.alrm.reg.a2_day_mode = alarm_type & DS3231_ALARM_TYPE_DAY_MODE;
-    ds3231_.alrm.reg.a2_m4 = alarm_type & DS3231_ALARM_TYPE_M4;
+    this->read_alrm_2_();
+    ds3231_.alrm_2.reg.minute = minute % 10;
+    ds3231_.alrm_2.reg.minute_10 = minute / 10;
+    ds3231_.alrm_2.reg.m2 = alarm_type & DS3231_ALARM_TYPE_M2;
+    ds3231_.alrm_2.reg.hour = hour % 10;
+    ds3231_.alrm_2.reg.hour_10 = hour / 10;
+    ds3231_.alrm_2.reg.m3 = alarm_type & DS3231_ALARM_TYPE_M3;
+    ds3231_.alrm_2.reg.day = day % 10;
+    ds3231_.alrm_2.reg.day_10 = day / 10;
+    ds3231_.alrm_2.reg.day_mode = alarm_type & DS3231_ALARM_TYPE_DAY_MODE;
+    ds3231_.alrm_2.reg.m4 = alarm_type & DS3231_ALARM_TYPE_M4;
+    this->write_alrm_2_();
     if (ds3231_.ctrl.reg.alrm_2_int != bool(alarm_type & DS3231_ALARM_TYPE_INTERUPT)) {
       ds3231_.ctrl.reg.alrm_2_int = bool(alarm_type & DS3231_ALARM_TYPE_INTERUPT);
-      need_ctrl_write = true;
+      this->write_ctrl_();
     }
-  }
-  this->write_alrm_();
-  if (need_ctrl_write) {
-    this->write_ctrl_();
   }
 }
 
@@ -206,45 +209,61 @@ bool DS3231Component::write_rtc_() {
   return true;
 }
 
-bool DS3231Component::read_alrm_() {
-  if (!this->read_bytes(DS3231_ALARM_ADDRESS, this->ds3231_.alrm.raw, sizeof(this->ds3231_.alrm.raw))) {
+bool DS3231Component::read_alrm_1_() {
+  if (!this->read_bytes(DS3231_ALARM_1_ADDRESS, this->ds3231_.alrm_1.raw, sizeof(this->ds3231_.alrm_1.raw))) {
     ESP_LOGE(TAG, "Can't read I2C data.");
     return false;
   }
   ESP_LOGD(TAG, "Read  Alarm1 - %0u%0u:%0u%0u:%0u%0u %s:%0u%0u M1:%0u M2:%0u M3:%0u M4:%0u",
-           ds3231_.alrm.reg.a1_hour_10, ds3231_.alrm.reg.a1_hour,
-           ds3231_.alrm.reg.a1_minute_10, ds3231_.alrm.reg.a1_minute,
-           ds3231_.alrm.reg.a1_second_10, ds3231_.alrm.reg.a1_second,
-           ds3231_.alrm.reg.a1_day_mode == 0 ? "DoM" : "DoW",
-           ds3231_.alrm.reg.a1_day_10, ds3231_.alrm.reg.a1_day,
-           ds3231_.alrm.reg.a1_m1, ds3231_.alrm.reg.a1_m2, ds3231_.alrm.reg.a1_m3, ds3231_.alrm.reg.a1_m4);
-  ESP_LOGD(TAG, "Read  Alarm2 - %0u%0u:%0u%0u %s:%0u%0u M2:%0u M3:%0u M4:%0u",
-           ds3231_.alrm.reg.a2_hour_10, ds3231_.alrm.reg.a2_hour,
-           ds3231_.alrm.reg.a2_minute_10, ds3231_.alrm.reg.a2_minute,
-           ds3231_.alrm.reg.a2_day_mode == 0 ? "DoM" : "DoW",
-           ds3231_.alrm.reg.a2_day_10, ds3231_.alrm.reg.a2_day,
-           ds3231_.alrm.reg.a2_m2, ds3231_.alrm.reg.a2_m3, ds3231_.alrm.reg.a2_m4);
+           ds3231_.alrm_1.reg.hour_10, ds3231_.alrm_1.reg.hour,
+           ds3231_.alrm_1.reg.minute_10, ds3231_.alrm_1.reg.minute,
+           ds3231_.alrm_1.reg.second_10, ds3231_.alrm_1.reg.second,
+           ds3231_.alrm_1.reg.day_mode == 0 ? "DoM" : "DoW",
+           ds3231_.alrm_1.reg.day_10, ds3231_.alrm_1.reg.day,
+           ds3231_.alrm_1.reg.m1, ds3231_.alrm_1.reg.m2, ds3231_.alrm_1.reg.m3, ds3231_.alrm_1.reg.m4);
   return true;
 }
 
-bool DS3231Component::write_alrm_() {
-  if (!this->write_bytes(DS3231_ALARM_ADDRESS, this->ds3231_.alrm.raw, sizeof(this->ds3231_.alrm.raw))) {
+bool DS3231Component::write_alrm_1_() {
+  if (!this->write_bytes(DS3231_ALARM_1_ADDRESS, this->ds3231_.alrm_1.raw, sizeof(this->ds3231_.alrm_1.raw))) {
     ESP_LOGE(TAG, "Can't write I2C data.");
     return false;
   }
   ESP_LOGD(TAG, "Write Alarm1 - %0u%0u:%0u%0u:%0u%0u %s:%0u%0u M1:%0u M2:%0u M3:%0u M4:%0u",
-           ds3231_.alrm.reg.a1_hour_10, ds3231_.alrm.reg.a1_hour,
-           ds3231_.alrm.reg.a1_minute_10, ds3231_.alrm.reg.a1_minute,
-           ds3231_.alrm.reg.a1_second_10, ds3231_.alrm.reg.a1_second,
-           ds3231_.alrm.reg.a1_day_mode == 0 ? "DoM" : "DoW",
-           ds3231_.alrm.reg.a1_day_10, ds3231_.alrm.reg.a1_day,
-           ds3231_.alrm.reg.a1_m1, ds3231_.alrm.reg.a1_m2, ds3231_.alrm.reg.a1_m3, ds3231_.alrm.reg.a1_m4);
+           ds3231_.alrm_1.reg.hour_10, ds3231_.alrm_1.reg.hour,
+           ds3231_.alrm_1.reg.minute_10, ds3231_.alrm_1.reg.minute,
+           ds3231_.alrm_1.reg.second_10, ds3231_.alrm_1.reg.second,
+           ds3231_.alrm_1.reg.day_mode == 0 ? "DoM" : "DoW",
+           ds3231_.alrm_1.reg.day_10, ds3231_.alrm_1.reg.day,
+           ds3231_.alrm_1.reg.m1, ds3231_.alrm_1.reg.m2, ds3231_.alrm_1.reg.m3, ds3231_.alrm_1.reg.m4);
+  return true;
+}
+
+bool DS3231Component::read_alrm_2_() {
+  if (!this->read_bytes(DS3231_ALARM_1_ADDRESS, this->ds3231_.alrm_2.raw, sizeof(this->ds3231_.alrm_2.raw))) {
+    ESP_LOGE(TAG, "Can't read I2C data.");
+    return false;
+  }
+  ESP_LOGD(TAG, "Read  Alarm2 - %0u%0u:%0u%0u %s:%0u%0u M2:%0u M3:%0u M4:%0u",
+           ds3231_.alrm_2.reg.hour_10, ds3231_.alrm_2.reg.hour,
+           ds3231_.alrm_2.reg.minute_10, ds3231_.alrm_2.reg.minute,
+           ds3231_.alrm_2.reg.day_mode == 0 ? "DoM" : "DoW",
+           ds3231_.alrm_2.reg.day_10, ds3231_.alrm_2.reg.day,
+           ds3231_.alrm_2.reg.m2, ds3231_.alrm_2.reg.m3, ds3231_.alrm_2.reg.m4);
+  return true;
+}
+
+bool DS3231Component::write_alrm_2_() {
+  if (!this->write_bytes(DS3231_ALARM_1_ADDRESS, this->ds3231_.alrm_2.raw, sizeof(this->ds3231_.alrm_2.raw))) {
+    ESP_LOGE(TAG, "Can't write I2C data.");
+    return false;
+  }
   ESP_LOGD(TAG, "Write Alarm2 - %0u%0u:%0u%0u %s:%0u%0u M2:%0u M3:%0u M4:%0u",
-           ds3231_.alrm.reg.a2_hour_10, ds3231_.alrm.reg.a2_hour,
-           ds3231_.alrm.reg.a2_minute_10, ds3231_.alrm.reg.a2_minute,
-           ds3231_.alrm.reg.a2_day_mode == 0 ? "DoM" : "DoW",
-           ds3231_.alrm.reg.a2_day_10, ds3231_.alrm.reg.a2_day,
-           ds3231_.alrm.reg.a2_m2, ds3231_.alrm.reg.a2_m3, ds3231_.alrm.reg.a2_m4);
+           ds3231_.alrm_2.reg.hour_10, ds3231_.alrm_2.reg.hour,
+           ds3231_.alrm_2.reg.minute_10, ds3231_.alrm_2.reg.minute,
+           ds3231_.alrm_2.reg.day_mode == 0 ? "DoM" : "DoW",
+           ds3231_.alrm_2.reg.day_10, ds3231_.alrm_2.reg.day,
+           ds3231_.alrm_2.reg.m2, ds3231_.alrm_2.reg.m3, ds3231_.alrm_2.reg.m4);
   return true;
 }
 
