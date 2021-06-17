@@ -11,6 +11,8 @@ static const int COMMAND_DELAY = 50;
 
 void Tuya::setup() {
   this->set_interval("heartbeat", 10000, [this] { this->send_empty_command_(TuyaCommandType::HEARTBEAT); });
+
+  this->send_empty_command_(TuyaCommandType::DATAPOINT_QUERY);
 }
 
 void Tuya::loop() {
